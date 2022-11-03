@@ -45,76 +45,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    //ChessboardUI(chessboard = Chessboard())
                     ChessGameView(vm = chessGameViewModel)
                 }
             }
         }
     }
 }
-/*
-@Composable
-fun ChessboardPiece(piece: Piece) {
-
-   var offsetX by remember { mutableStateOf(0f) }
-   var offsetY by remember { mutableStateOf(0f) }
-
-
-   Text(piece.repr, fontSize = 38.sp,
-       modifier = Modifier.offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-           .pointerInput(Unit) {
-               detectDragGestures { change, dragAmount ->
-                   change.consumeAllChanges()
-                   offsetX += dragAmount.x
-                   offsetY += dragAmount.y
-               }
-           })
-
-   Text(piece.repr, fontSize = 38.sp, modifier = Modifier.clickable(enabled = true) {  })
-}
-
-    */
-
-/*
-@Composable
-fun ChessboardUI(chessboard: Chessboard) {
-    Column(modifier =
-    Modifier
-        .padding(10.dp)
-        .height(IntrinsicSize.Min)
-        .width(IntrinsicSize.Min)
-        ) {
-        (chessboard.rows.reversed()).forEachIndexed {i, vertChar ->
-            Row {
-                (chessboard.columns).forEachIndexed {j, horizChar ->
-                    val tile = chessboard[horizChar + vertChar]
-                    Box(modifier = Modifier.size(45.dp).background(color = when {
-                        tile.color == TileColor.Dark -> Color (0xFF769656)
-                        else -> Color(0xFFF5F5F5)
-                    }),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        //Text(tile.piece?.repr ?: "", fontSize = 38.sp)
-                        if (tile.piece != null) {
-                            ChessboardPiece(tile.piece!!)
-                        }
-                    }
-                }
-            }
-
-        }
-    }
-}
-
- */
-
-/*
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    ChessTheme {
-        ChessboardUI(chessboard = Chessboard())
-    }
-}
-
- */

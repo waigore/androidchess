@@ -1,12 +1,12 @@
 package com.example.chess.model
 
-enum class PieceType {
-    King,
-    Queen,
-    Rook,
-    Bishop,
-    Knight,
-    Pawn
+enum class PieceType(val materialValue: Int) {
+    King(1000),
+    Queen(9),
+    Rook(5),
+    Bishop(4),
+    Knight(3),
+    Pawn(1)
 }
 
 enum class Side {
@@ -213,7 +213,6 @@ class Chessboard {
         val col = "${index[0]}"
         val row = "${index[1]}"
         return boardTiles[columnToIndex(col)*size + rowToIndex(row)]
-        //return ChessboardTile(column = "" +index[0], row = "" +index[1]) ?: throw java.lang.IllegalArgumentException()
     }
 
 

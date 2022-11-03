@@ -17,6 +17,7 @@ enum class GameState {
 interface IChessGameObserver: IObserver {
     fun gameStateChanged(old: GameState, new: GameState)
     fun nextMoveChanged(old: Side, new: Side)
+    fun pieceCaptured(piece: Piece, index: String)
     fun tilesChanged(tiles: List<String>)
     fun castlingRightsChanged(side: Side, queensideAllowed: Boolean, kingsideAllowed: Boolean)
 }
@@ -35,6 +36,20 @@ class ChessGame @Inject constructor(): IObservable {
 
     val qCastlingRights: MutableMap<Side, Boolean> = mutableMapOf(Side.White to true, Side.Black to true)
     val kCastlingRights: MutableMap<Side, Boolean> = mutableMapOf(Side.White to true, Side.Black to true)
+    val whiteCapturedPieces: MutableMap<PieceType, Int> = mutableMapOf(
+        PieceType.Pawn to 0,
+        PieceType.Knight to 0,
+        PieceType.Bishop to 0,
+        PieceType.Rook to 0,
+        PieceType.Queen to 0
+    )
+    val blackCapturedPieces: MutableMap<PieceType, Int> = mutableMapOf(
+        PieceType.Pawn to 0,
+        PieceType.Knight to 0,
+        PieceType.Bishop to 0,
+        PieceType.Rook to 0,
+        PieceType.Queen to 0
+    )
 
     override val observers: ArrayList<IObserver> by lazy {
         ArrayList()
@@ -52,6 +67,10 @@ class ChessGame @Inject constructor(): IObservable {
         observers.forEach { (it as IChessGameObserver).tilesChanged(tiles)}
     }
 
+    private fun notifyPieceCaptured(piece: Piece, index: String) {
+        observers.forEach { (it as IChessGameObserver).pieceCaptured(piece, index)}
+    }
+
     private fun notifyCastlingRightsChanged(side: Side, queensideAllowed: Boolean, kingsideAllowed: Boolean) {
         observers.forEach { (it as IChessGameObserver).castlingRightsChanged(side, queensideAllowed, kingsideAllowed)}
     }
@@ -67,6 +86,12 @@ class ChessGame @Inject constructor(): IObservable {
         nextMoveSide = Side.White
         qCastlingRights[Side.White] = true; qCastlingRights[Side.Black] = true
         kCastlingRights[Side.White] = true; kCastlingRights[Side.Black] = true
+        whiteCapturedPieces.keys.forEach { key ->
+            whiteCapturedPieces[key] = 0
+        }
+        blackCapturedPieces.keys.forEach { key ->
+            blackCapturedPieces[key] = 0
+        }
     }
 
     private fun updateCastlingRights(piece: Piece, fromIndex: String) {
@@ -171,7 +196,7 @@ class ChessGame @Inject constructor(): IObservable {
 
         val targetPiece = chessboard.pieceAt(toIndex)
         val moveType = if (targetPiece != null) MoveType.Capture else MoveType.Normal
-        //val checkType: CheckType = if (chessboard.kingWouldBeInCheck(otherSide, fromIndex, toIndex)) CheckType.Check else CheckType.None
+
         val isCheckmate = chessboard.kingWouldBeCheckmated(otherSide, fromIndex, toIndex)
         val checkType = when {
             isCheckmate -> CheckType.Checkmate
@@ -179,6 +204,13 @@ class ChessGame @Inject constructor(): IObservable {
             else -> CheckType.None
         }
         val disambiguation = if (piece.pieceType != PieceType.Pawn) chessboard.disambiguateMove(fromIndex, toIndex).lowercase() else ""
+
+        //update captured piece counter
+        val capturedPieces = if (otherSide == Side.White) whiteCapturedPieces else blackCapturedPieces
+        if (targetPiece != null) {
+            capturedPieces[targetPiece.pieceType] = capturedPieces[targetPiece.pieceType]!! + 1
+            notifyPieceCaptured(targetPiece, toIndex)
+        }
 
         updateCastlingRights(piece, fromIndex)
         chessboard.movePiece(fromIndex, toIndex)
@@ -192,14 +224,6 @@ class ChessGame @Inject constructor(): IObservable {
 
         notifyTilesChanged(listOf(fromIndex, toIndex))
 
-        /*
-        if (checkType == CheckType.Checkmate) {
-            endGame(piece.pieceColor)
-        }
-        else {
-            nextMoveSide = otherSide
-        }
-        */
         nextMoveSide = otherSide
     }
 

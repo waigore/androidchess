@@ -23,20 +23,61 @@ fun ChessGameView(vm: ChessGameViewModel) {
     val chessboard = chessGame.chessboard
     val gameState by vm.gameState.collectAsState()
     val nextMove by vm.gameNextMove.collectAsState()
+    val pieceCaptured by vm.gamePieceCaptured.collectAsState()
 
-    //var selectedIndex by remember { mutableStateOf("") }
-    //var legalMoves by remember { mutableStateOf(emptyList<String>()) }
-    ChessboardView(chessboard,
-        nextMove = nextMove,
-        selectedIndex = vm.selectedIndex,
-        legalMoves = vm.legalMoves,
-        castlingMoves = vm.castlingMoves,
-        onPieceSelected = {p, i -> vm.showLegalMoves(p, i)},
-        onCastle = {s, c -> vm.castle(s, c) }
-    ) { f, t ->
-        vm.makeMove(f, t)
+    Column {
+        ChessboardView(chessboard,
+            nextMove = nextMove,
+            selectedIndex = vm.selectedIndex,
+            legalMoves = vm.legalMoves,
+            castlingMoves = vm.castlingMoves,
+            onPieceSelected = {p, i -> vm.showLegalMoves(p, i)},
+            onCastle = {s, c -> vm.castle(s, c) }
+        ) { f, t ->
+            vm.makeMove(f, t)
+        }
+        if (pieceCaptured != null) {
+            CapturedPiecesView(vm.chessGame.formatCapturedPieces(Side.White), vm.chessGame.formatCapturedPieces(Side.Black))
+        }
+        if (nextMove != null) {
+            MoveHistoryView(vm.chessGame.moveHistoryStandardNotation())
+        }
+    }
+
+}
+
+@Composable
+fun CapturedPiecesView(whiteCapturedPieces: String, blackCapturedPieces: String) {
+    Column {
+        Text(whiteCapturedPieces, fontSize = 20.sp)
+        Text(blackCapturedPieces, fontSize = 20.sp)
     }
 }
+
+@Composable
+fun MoveHistoryView(moveHistory: List<String>) {
+    val whiteMoves = mutableListOf<String>()
+    val blackMoves = mutableListOf<String>()
+    moveHistory.forEachIndexed {i, move ->
+        if (i % 2 == 0) whiteMoves.add(move)
+        else blackMoves.add(move)
+    }
+    Row {
+        Column {
+            whiteMoves.forEachIndexed {j, move ->
+                Text("${j+1}. " + move)
+            }
+        }
+        Spacer(modifier = Modifier.padding(10.dp))
+        Column {
+            blackMoves.forEachIndexed {j, move ->
+                Text( move)
+            }
+        }
+    }
+
+}
+
 
 @Composable
 fun ChessboardView(chessboard: Chessboard,
@@ -47,9 +88,6 @@ fun ChessboardView(chessboard: Chessboard,
                    onPieceSelected: (p: Piece, index: String)-> Unit = {p, i ->},
                    onCastle: (side: Side, castleType: CastleType)->Unit = {s, c->},
                    onMakeMove: (fromIndex: String, toIndex: String)-> Unit = {f, t->}) {
-    //val hasLegalMoves by remember { derivedStateOf { !legalMoves.isEmpty() }}
-    //var selectedIndex by remember { mutableStateOf("") }
-    //var legalMoves by remember { mutableStateOf(emptyList<String>()) }
 
     Column(modifier =
     Modifier
@@ -94,7 +132,8 @@ fun ChessboardView(chessboard: Chessboard,
                                 .clip(CircleShape)
                                 .background(Color(0xFF247D91))
                                 .clickable {
-                                    val castleType = castlingMoves.first { (c, s)-> s == col+row }.first
+                                    val castleType =
+                                        castlingMoves.first { (c, s) -> s == col + row }.first
                                     onCastle(nextMove, castleType)
                                 })
                             Box(modifier = Modifier

@@ -38,6 +38,10 @@ class ChessGameViewModel @Inject constructor(
     val gameChangedTiles: StateFlow<ChessGameChangedTiles>
         get() = _gameChangedTiles.asStateFlow()
 
+    private val _gamePieceCaptured = MutableStateFlow<Piece?>(null)
+    val gamePieceCaptured: StateFlow<Piece?>
+        get() = _gamePieceCaptured.asStateFlow()
+
     var selectedIndex by mutableStateOf("")
     var legalMoves by mutableStateOf(emptyList<String>())
     var castlingMoves by mutableStateOf(emptyList<Pair<CastleType, String>>())
@@ -85,6 +89,12 @@ class ChessGameViewModel @Inject constructor(
     override fun nextMoveChanged(old: Side, new: Side) {
         viewModelScope.launch {
             _gameNextMove.emit(new)
+        }
+    }
+
+    override fun pieceCaptured(piece: Piece, index: String) {
+        viewModelScope.launch {
+            _gamePieceCaptured.emit(piece)
         }
     }
 

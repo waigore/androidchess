@@ -145,19 +145,6 @@ fun generatePawnCaptures(side: Side, index: String): List<String> {
     return l
 }
 
-/*
-fun Chessboard.generateCastlingMoves(side: Side): List<String> {
-    val m = mutableListOf<String>()
-    if (this.castleValid(side, CastleType.Kingside)) {
-        m.add(if (side == Side.White) "G1" else "G8")
-    }
-    if (this.castleValid(side, CastleType.Queenside)) {
-        m.add(if (side == Side.White) "C1" else "C8")
-    }
-    return m
-}
-
- */
 
 fun Chessboard.generateLegalMoves(index: String): List<String> {
     val p = this[index].piece ?: throw java.lang.IllegalArgumentException("No piece on " + index + "!")

@@ -309,6 +309,28 @@ class GameTest {
             "Ke1", "Bb4+", "Kd1", "Bb3+", "Kc1", "Ne2+", "Kb1", "Nc3+",
             "Kc1", "Rc2#"
         ))
-        //chessGame.chessboard.basicPrint()
+    }
+
+    @Test
+    fun test_capturedPieces() {
+        chessGame.reset()
+        chessGame.start()
+
+        chessGame.makeMove("E2", "E4")
+        chessGame.makeMove("D7", "D5")
+        chessGame.makeMove("E4", "D5")
+        chessGame.makeMove("D8", "D5")
+
+        val whiteCapturedPieces = chessGame.formatCapturedPieces(Side.White)
+        val blackCapturedPieces = chessGame.formatCapturedPieces(Side.Black)
+        assert(whiteCapturedPieces == "♙")
+        assert(blackCapturedPieces == "♟")
+
+        chessGame.makeMove("B1", "C3")
+        chessGame.makeMove("D5", "E5")
+        chessGame.makeMove("D1", "E2")
+        chessGame.makeMove("E5", "E2")
+        val whiteCapturedPieces2 = chessGame.formatCapturedPieces(Side.White)
+        assert(whiteCapturedPieces2 == "♕ ♙")
     }
 }
