@@ -180,4 +180,31 @@ class ChessboardTest {
 
         assert(chessboard.kingWouldBeInCheck(Side.Black, "A6", "B6"))
     }
+
+    @Test
+    fun test_enPassant() {
+        chessboard.clear()
+        chessboard.placePiece(Piece.WhitePawn, "E5")
+        chessboard.placePiece(Piece.BlackPawn, "D5")
+        chessboard.placePiece(Piece.BlackPawn, "F5")
+        assert (chessboard.enPassantValid("E5", "D6"))
+        assert (chessboard.enPassantValid("E5", "F6"))
+
+        chessboard.placePiece(Piece.WhitePawn, "D5")
+        assert (!chessboard.enPassantValid("E5", "D6"))
+
+        chessboard.placePiece(Piece.BlackPawn, "D6")
+        assert(chessboard.pawnCaptureValid(Side.White, "E5", "D6"))
+        assert(!chessboard.pawnCaptureValid(Side.White, "E5", "D5"))
+
+        chessboard.clear()
+        chessboard.placePiece(Piece.BlackPawn, "E4")
+        chessboard.placePiece(Piece.WhitePawn, "D4")
+        chessboard.placePiece(Piece.WhitePawn, "F4")
+        assert(chessboard.enPassantValid("E4", "D3"))
+        assert(chessboard.enPassantValid("E4", "F3"))
+
+        chessboard.placePiece(Piece.BlackPawn, "D4")
+        assert(!chessboard.enPassantValid("E4", "D3"))
+    }
 }

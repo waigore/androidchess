@@ -178,6 +178,21 @@ class ChessGame @Inject constructor(): IObservable {
         return m
     }
 
+    fun generateEnPassantMoves(index: String): List<Pair<String, String>> {
+        if (gameState != GameState.InProgress) throw IllegalStateException("Game is not in progress!")
+        val piece = chessboard.pieceAt(index) ?: throw java.lang.IllegalArgumentException("No piece at " + index + "!")
+
+        val lastMove = moveHistory.lastOrNull() ?: return emptyList()
+        if (lastMove.piece.pieceType != PieceType.Pawn) {
+            return emptyList()
+        }
+
+        val enPassantMoves = chessboard.generateEnPassantMoves(index)
+        return enPassantMoves.filter { (toIndex, captureIndex) ->
+            captureIndex == lastMove.toIndex
+        }
+    }
+
     fun generateLegalMoves(index: String): List<String> {
         if (gameState != GameState.InProgress) throw IllegalStateException("Game is not in progress!")
         val piece = chessboard.pieceAt(index) ?: throw java.lang.IllegalArgumentException("No piece at " + index + "!")
@@ -185,22 +200,24 @@ class ChessGame @Inject constructor(): IObservable {
         return chessboard.generateLegalMoves(index)
     }
 
-    fun makeMove(fromIndex: String, toIndex: String) {
+    fun makeMove(fromIndex: String, toIndex: String, captureIndex: String = "") {
         if (gameState != GameState.InProgress) throw IllegalStateException("Game is not in progress!")
         val piece = chessboard.pieceAt(fromIndex) ?: throw java.lang.IllegalArgumentException("No piece at " + fromIndex + "!")
         val otherSide = if (piece.pieceColor == Side.White) Side.Black else Side.White
         if (nextMoveSide != piece.pieceColor) throw IllegalStateException("Piece to be moved does not belong to " + nextMoveSide + "!")
 
         val legalMoves = chessboard.generateLegalMoves(fromIndex)
-        if (!legalMoves.any {it == toIndex}) throw java.lang.IllegalArgumentException(fromIndex + "->" + toIndex + " is not legal!")
+        val enPassantMoves = chessboard.generateEnPassantMoves(fromIndex)
+        if (captureIndex == "" && !legalMoves.any {it == toIndex}) throw java.lang.IllegalArgumentException(fromIndex + "->" + toIndex + " is not legal!")
+        if (captureIndex != "" && !enPassantMoves.any {it.first == toIndex}) throw java.lang.IllegalArgumentException(fromIndex + "->" + toIndex + "(en passant) is not legal!")
 
-        val targetPiece = chessboard.pieceAt(toIndex)
+        val targetPiece = if (captureIndex != "") chessboard.pieceAt(captureIndex) else chessboard.pieceAt(toIndex)
         val moveType = if (targetPiece != null) MoveType.Capture else MoveType.Normal
 
-        val isCheckmate = chessboard.kingWouldBeCheckmated(otherSide, fromIndex, toIndex)
+        val isCheckmate = chessboard.kingWouldBeCheckmated(otherSide, fromIndex, toIndex, captureIndex)
         val checkType = when {
             isCheckmate -> CheckType.Checkmate
-            chessboard.kingWouldBeInCheck(otherSide, fromIndex, toIndex) ->CheckType.Check
+            chessboard.kingWouldBeInCheck(otherSide, fromIndex, toIndex, captureIndex) ->CheckType.Check
             else -> CheckType.None
         }
         val disambiguation = if (piece.pieceType != PieceType.Pawn) chessboard.disambiguateMove(fromIndex, toIndex).lowercase() else ""
@@ -213,7 +230,7 @@ class ChessGame @Inject constructor(): IObservable {
         }
 
         updateCastlingRights(piece, fromIndex)
-        chessboard.movePiece(fromIndex, toIndex)
+        chessboard.movePiece(fromIndex, toIndex, captureIndex)
 
         val chessMove = ChessMove(
             piece = piece,
@@ -222,7 +239,7 @@ class ChessGame @Inject constructor(): IObservable {
             disambiguation = disambiguation)
         moveHistory.add(chessMove)
 
-        notifyTilesChanged(listOf(fromIndex, toIndex))
+        notifyTilesChanged(listOf(fromIndex, toIndex) + (if (captureIndex != "") listOf(captureIndex) else emptyList()))
 
         nextMoveSide = otherSide
     }

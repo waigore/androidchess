@@ -116,6 +116,34 @@ fun Chessboard.isCheckmated(side: Side): Boolean {
     }
 }
 
+fun Chessboard.enPassantValid(fromIndex: String, toIndex: String): Boolean {
+    val allCols = "ABCDEFGH"
+    val allRows = "12345678"
+    val colIndex = allCols.indexOf(fromIndex[0]); val rowIndex = allRows.indexOf(fromIndex[1])
+    val piece = this.pieceAt(fromIndex) ?: return false
+    val otherSide = if (piece.pieceColor == Side.White) Side.Black else Side.White
+    if (piece.pieceType != PieceType.Pawn) return false
+
+    val startingRank = if (piece.pieceColor == Side.White) '5' else '4'
+    val targetRank = if (piece.pieceColor == Side.White) rowIndex +1 else rowIndex -1
+    if (fromIndex[1] != startingRank) {
+        return false
+    }
+    val tile1 = if (colIndex > 0) "${allCols[colIndex-1]}${allRows[targetRank]}" else ""
+    val tile2 = if (colIndex < allCols.length - 1) "${allCols[colIndex+1]}${allRows[targetRank]}" else ""
+    if (tile1 == toIndex) {
+        val enemyPawnTile = "${allCols[colIndex-1]}" + fromIndex[1]
+        val enemyPawn = this.pieceAt(enemyPawnTile) ?: return false
+        return enemyPawn.pieceType == PieceType.Pawn && enemyPawn.pieceColor == otherSide
+    }
+    else if (tile2 == toIndex) {
+        val enemyPawnTile = "${allCols[colIndex+1]}" + fromIndex[1]
+        val enemyPawn = this.pieceAt(enemyPawnTile) ?: return false
+        return enemyPawn.pieceType == PieceType.Pawn && enemyPawn.pieceColor == otherSide
+    }
+    else return false
+}
+
 fun Chessboard.castleValid(side: Side, castleType: CastleType): Boolean {
     val startingKingSquares = mapOf(Side.White to "E1", Side.Black to "E8")
     val startingQueensideRookSquares = mapOf(Side.White to "A1", Side.Black to "A8")
@@ -233,15 +261,17 @@ fun Chessboard.kingInCheck(side: Side): Boolean {
 /**
  * Returns true if the king would be in check if the move from fromIndex to toIndex is made
  */
-fun Chessboard.kingWouldBeInCheck(side: Side, fromIndex: String, toIndex: String): Boolean {
+fun Chessboard.kingWouldBeInCheck(side: Side, fromIndex: String, toIndex: String, captureIndex: String = ""): Boolean {
     val n = this.clone()
-    n.movePiece(fromIndex, toIndex)
+    n.movePiece(fromIndex, toIndex, captureIndex)
+
     return n.kingInCheck(side)
 }
 
-fun Chessboard.kingWouldBeCheckmated(side: Side, fromIndex: String, toIndex: String): Boolean {
+fun Chessboard.kingWouldBeCheckmated(side: Side, fromIndex: String, toIndex: String, captureIndex: String = ""): Boolean {
     val n = this.clone()
-    n.movePiece(fromIndex, toIndex)
+    n.movePiece(fromIndex, toIndex, captureIndex)
+
     return n.isCheckmated(side)
 }
 

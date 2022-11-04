@@ -1,9 +1,7 @@
 package com.example.chess
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -45,6 +43,7 @@ class ChessGameViewModel @Inject constructor(
     var selectedIndex by mutableStateOf("")
     var legalMoves by mutableStateOf(emptyList<String>())
     var castlingMoves by mutableStateOf(emptyList<Pair<CastleType, String>>())
+    var enPassantMoves by mutableStateOf(emptyList<Pair<String, String>>())
 
     init {
         chessGame.add(this)
@@ -52,32 +51,32 @@ class ChessGameViewModel @Inject constructor(
         chessGame.start()
     }
 
-    fun showLegalMoves(p: Piece, index: String) {
+    private fun clearSelectionAndMoves() {
+        selectedIndex = ""
+        legalMoves = emptyList()
+        castlingMoves = emptyList()
+        enPassantMoves = emptyList()
+    }
+
+    fun toggleLegalMoves(p: Piece, index: String) {
         if (selectedIndex == index) {
-            selectedIndex = ""
-            legalMoves = emptyList()
-            castlingMoves = emptyList()
+            clearSelectionAndMoves()
         } else {
             selectedIndex = index
             legalMoves = chessGame.generateLegalMoves(index)
-            if (p.pieceType == PieceType.King) {
-                castlingMoves = chessGame.generateCastlingMoves(p.pieceColor)
-            }
+            castlingMoves = if (p.pieceType == PieceType.King) chessGame.generateCastlingMoves(p.pieceColor) else emptyList()
+            enPassantMoves = if (p.pieceType == PieceType.Pawn) chessGame.generateEnPassantMoves(index) else emptyList()
         }
     }
 
     fun castle(side: Side, castleType: CastleType) {
-        selectedIndex = ""
-        legalMoves = emptyList()
-        castlingMoves = emptyList()
+        clearSelectionAndMoves()
         chessGame.doCastle(side, castleType)
     }
 
-    fun makeMove(fromIndex: String, toIndex: String) {
-        selectedIndex = ""
-        legalMoves = emptyList()
-        castlingMoves = emptyList()
-        chessGame.makeMove(fromIndex, toIndex)
+    fun makeMove(fromIndex: String, toIndex: String, captureIndex: String = "") {
+        clearSelectionAndMoves()
+        chessGame.makeMove(fromIndex, toIndex, captureIndex)
     }
 
     override fun gameStateChanged(old: GameState, new: GameState) {

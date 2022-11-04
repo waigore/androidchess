@@ -31,10 +31,11 @@ fun ChessGameView(vm: ChessGameViewModel) {
             selectedIndex = vm.selectedIndex,
             legalMoves = vm.legalMoves,
             castlingMoves = vm.castlingMoves,
-            onPieceSelected = {p, i -> vm.showLegalMoves(p, i)},
+            enPassantMoves = vm.enPassantMoves,
+            onPieceSelected = {p, i -> vm.toggleLegalMoves(p, i)},
             onCastle = {s, c -> vm.castle(s, c) }
-        ) { f, t ->
-            vm.makeMove(f, t)
+        ) { f, t, c ->
+            vm.makeMove(f, t, c)
         }
         if (pieceCaptured != null) {
             CapturedPiecesView(vm.chessGame.formatCapturedPieces(Side.White), vm.chessGame.formatCapturedPieces(Side.Black))
@@ -85,9 +86,10 @@ fun ChessboardView(chessboard: Chessboard,
                    selectedIndex: String = "",
                    legalMoves: List<String> = emptyList(),
                    castlingMoves: List<Pair<CastleType, String>> = emptyList(),
+                   enPassantMoves: List<Pair<String, String>> = emptyList(),
                    onPieceSelected: (p: Piece, index: String)-> Unit = {p, i ->},
                    onCastle: (side: Side, castleType: CastleType)->Unit = {s, c->},
-                   onMakeMove: (fromIndex: String, toIndex: String)-> Unit = {f, t->}) {
+                   onMakeMove: (fromIndex: String, toIndex: String, captureIndex: String)-> Unit = {f, t, c->}) {
 
     Column(modifier =
     Modifier
@@ -114,32 +116,16 @@ fun ChessboardView(chessboard: Chessboard,
                         contentAlignment = Alignment.Center
                     ) {
                         if (selectedIndex != "" && legalMoves.contains(col+row)) {
-                            Box(modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFAB2929))
-                                .clickable {
-                                    onMakeMove(selectedIndex, col + row)
-                                })
-                            Box(modifier = Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .background(Color.Red))
+                            LegalMoveIndicator(selectedIndex, col+row, onMakeMove = onMakeMove)
                         }
                         else if (selectedIndex != "" && castlingMoves.any {(c, s)-> s == col+row }) {
-                            Box(modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF247D91))
-                                .clickable {
-                                    val castleType =
-                                        castlingMoves.first { (c, s) -> s == col + row }.first
-                                    onCastle(nextMove, castleType)
-                                })
-                            Box(modifier = Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .background(Color.Cyan))
+                            val castleType =
+                                castlingMoves.first { (c, s) -> s == col + row }.first
+                            CastleIndicator(nextMove, castleType, onCastle = onCastle)
+                        }
+                        else if (selectedIndex != "" && enPassantMoves.any {(t, c)-> t == col+row}) {
+                            val enPassantMove = enPassantMoves.first {(t, c) -> t == col+row}
+                            LegalMoveIndicator(selectedIndex, col + row, onMakeMove = onMakeMove, captureIndex = enPassantMove.second)
                         }
                         else if (tile.piece != null) {
                             val p = tile.piece!!
@@ -153,6 +139,57 @@ fun ChessboardView(chessboard: Chessboard,
 
         }
     }
+}
+
+/*
+@Composable
+fun EnPassantMoveIndicator(selectedIndex: String, toIndex: String, captureIndex: String, onMakeMove: (fromIndex: String, toIndex: String, captureIndex: String)-> Unit) {
+    Box(modifier = Modifier
+        .size(20.dp)
+        .clip(CircleShape)
+        .background(Color(0xFFAB2929))
+        .clickable {
+            onMakeMove(selectedIndex, toIndex, captureIndex)
+        })
+    Box(modifier = Modifier
+        .size(10.dp)
+        .clip(CircleShape)
+        .background(Color.Red))
+}
+ */
+
+@Composable
+fun LegalMoveIndicator(selectedIndex: String, toIndex: String,
+                       onMakeMove: (fromIndex: String, toIndex: String, captureIndex: String) -> Unit,
+                        captureIndex: String = "") {
+    Box(modifier = Modifier
+        .size(20.dp)
+        .clip(CircleShape)
+        .background(Color(0xFFAB2929))
+        .clickable {
+            onMakeMove(selectedIndex, toIndex, captureIndex)
+        })
+    Box(modifier = Modifier
+        .size(10.dp)
+        .clip(CircleShape)
+        .background(Color.Red))
+}
+
+@Composable
+fun CastleIndicator(side: Side, castleType: CastleType, onCastle: (side: Side, castleType: CastleType) -> Unit) {
+    Box(modifier = Modifier
+        .size(20.dp)
+        .clip(CircleShape)
+        .background(Color(0xFF247D91))
+        .clickable {
+            //val castleType =
+            //    castlingMoves.first { (c, s) -> s == col + row }.first
+            onCastle(side, castleType)
+        })
+    Box(modifier = Modifier
+        .size(10.dp)
+        .clip(CircleShape)
+        .background(Color.Cyan))
 }
 
 @Composable

@@ -333,4 +333,30 @@ class GameTest {
         val whiteCapturedPieces2 = chessGame.formatCapturedPieces(Side.White)
         assert(whiteCapturedPieces2 == "♕ ♙")
     }
+
+    @Test
+    fun test_enPassant() {
+        chessGame.reset()
+        chessGame.start()
+
+        chessGame.makeMove("E2", "E4")
+        chessGame.makeMove("D7", "D5")
+        chessGame.makeMove("E4", "E5")
+        chessGame.makeMove("F7", "F5")
+        chessGame.makeMove("E5", "F6", "F5")
+        val moves = chessGame.moveHistoryStandardNotation()
+        assert(moves == listOf("e4", "d5", "e5", "f5", "exf6"))
+
+        chessGame.reset()
+        chessGame.start()
+
+        chessGame.makeMove("G1", "F3")
+        chessGame.makeMove("D7", "D5")
+        chessGame.makeMove("D2", "D3")
+        chessGame.makeMove("D5", "D4")
+        chessGame.makeMove("E2", "E4")
+        chessGame.makeMove("D4", "E3", "E4")
+        val moves2 = chessGame.moveHistoryStandardNotation()
+        assert(moves2 == listOf("Nf3", "d5", "d3", "d4", "e4", "dxe3"))
+    }
 }

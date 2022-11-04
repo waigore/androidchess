@@ -145,11 +145,43 @@ fun generatePawnCaptures(side: Side, index: String): List<String> {
     return l
 }
 
+fun generateEnPassantMoves(side: Side, index: String): List<Pair<String, String>> {
+    val allCols = "ABCDEFGH"
+    val allRows = "12345678"
+    val col = index[0]; val row = index[1]
+    val colIndex = allCols.indexOf(col); val rowIndex = allRows.indexOf(row)
+    val l = mutableListOf<Pair<String, String>>()
+
+    if (side == Side.White) {
+        if (colIndex + 1 < allCols.length)
+            l.add(Pair("${allCols[colIndex+1]}${allRows[rowIndex+1]}", "${allCols[colIndex+1]}"+row))
+        if (colIndex - 1 >= 0)
+            l.add(Pair("${allCols[colIndex-1]}${allRows[rowIndex+1]}", "${allCols[colIndex-1]}"+row))
+    }
+    else {
+        if (colIndex + 1 < allCols.length)
+            l.add(Pair("${allCols[colIndex+1]}${allRows[rowIndex-1]}", "${allCols[colIndex+1]}"+row))
+        if (colIndex -1 >= 0)
+            l.add(Pair("${allCols[colIndex-1]}${allRows[rowIndex-1]}", "${allCols[colIndex-1]}"+row))
+    }
+    return l
+
+}
+
+fun Chessboard.generateEnPassantMoves(index: String): List<Pair<String, String>> {
+    val p = this[index].piece ?: throw java.lang.IllegalArgumentException("No piece on " + index + "!")
+    val side = p.pieceColor; val otherSide = if (side == Side.White) Side.Black else Side.White
+
+    if (p.pieceType != PieceType.Pawn) return emptyList()
+
+    return generateEnPassantMoves(side, index).filter {(toIndex, captureIndex)->
+        this.enPassantValid(index, toIndex) && !this.kingWouldBeInCheck(side, index, toIndex, captureIndex)}
+        //.map {it.first}
+}
 
 fun Chessboard.generateLegalMoves(index: String): List<String> {
     val p = this[index].piece ?: throw java.lang.IllegalArgumentException("No piece on " + index + "!")
     val side = p.pieceColor; val otherSide = if (side == Side.White) Side.Black else Side.White
-    val isKingInCheck = this.kingInCheck(side)
 
     if (p.pieceType == PieceType.Pawn) {
         return (generatePawnMoves(side, index).filter { !this.pieceOccupied(side, it) && !this.pieceOccupied(otherSide, it) && !this.anyBlocking(index, it) } +

@@ -113,18 +113,21 @@ class Chessboard {
         }.flatMap { it }
     }
 
-    private fun removePiece(index: String) {
+    fun removePiece(index: String) {
         this[index].piece = null
     }
 
-    fun movePiece(fromIndex: String, toIndex: String): Piece? {
+    fun movePiece(fromIndex: String, toIndex: String, captureIndex: String = ""): Piece? {
         val p = this[fromIndex].piece ?: throw IllegalStateException("No piece on " + fromIndex + "!")
         val q = this[toIndex].piece
-        removePiece(fromIndex)
         q?.also {
             if (p.pieceColor == q!!.pieceColor) throw IllegalStateException("Cannot capture same colored piece!")
         }
+        removePiece(fromIndex)
         placePiece(p, toIndex)
+        if (captureIndex != "") {
+            removePiece(captureIndex)
+        }
         return q
     }
 
